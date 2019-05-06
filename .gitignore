@@ -1,0 +1,3 @@
+.remote-sync*
+__pycache__/
+tray_sensor\.egg-info/
