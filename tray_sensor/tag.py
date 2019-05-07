@@ -21,7 +21,7 @@ class TagDevice:
         self.scan_entry = scan_entry
         self._name = get_name(self.scan_entry)
         self.peripheral = bluepy.btle.Peripheral(scan_entry)
-        self.service = peripheral.getServiceByUUID(self.SERVICE_UUID)
+        self.service = self.peripheral.getServiceByUUID(self.SERVICE_UUID)
         self.characteristic = self.service.getCharacteristics(self.CHARACTERISTIC_UUID)[0]
 
     def close(self):
@@ -29,7 +29,7 @@ class TagDevice:
             self.peripheral.disconnect()
         except:
             pass
-            
+
     @property
     def name(self):
         return self._name
