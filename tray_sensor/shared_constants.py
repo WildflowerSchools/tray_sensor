@@ -23,8 +23,10 @@ DATA_FIELD_INFO = collections.OrderedDict([
     }),
     ('ranging_data', {
         'field_name_sentence_caps': "Ranging data",
-        'type': 'integer',
-        'string_format': '{}',
+        'type': 'float',
+        'list': True,
+        'max_list_length': 16,
+        'string_format': '{:.4}',
     }),
     ('rssi', {
         'field_name_sentence_caps': "RSSI",

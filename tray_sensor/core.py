@@ -28,6 +28,8 @@ COMPLETE_16B_SERVICES_TYPE_CODE = int('0x03', 16)
 COMPLETE_16B_SERVICES_VALUE = '00001811-0000-1000-8000-00805f9b34fb'
 COMPLETE_LOCAL_NAME_TYPE_CODE = int('0x09', 16)
 
+NUM_ANCHORS_PER_READ = 16
+
 def find_tray_sensor_devices(timeout = 10):
     scanner = bluepy.btle.Scanner()
     tray_sensor_devices = {}
@@ -66,27 +68,12 @@ class TraySensorBLE:
         characteristic = ranging_service.getCharacteristics(RANGING_CHARACTERISTIC_UUID)[0]
         bytes = characteristic.read()
         peripheral.disconnect()
-        ranging_data = bitstruct.unpack_dict(
-            'f32f32f32f32f32f32f32f32f32f32f32f32f32f32f32f32<',
-            [
-                'range00',
-                'range01',
-                'range02',
-                'range03',
-                'range04',
-                'range05',
-                'range06',
-                'range07',
-                'range08',
-                'range09',
-                'range10',
-                'range11',
-                'range12',
-                'range13',
-                'range14',
-                'range15',
-            ],
-            bytes)
+        ranging_data = []
+        for anchor_index in range(NUM_ANCHORS_PER_READ):
+            range_bytes = bytes[:4]
+            bytes = bytes[4:]
+            ranging_datum = bitstruct.unpack('f32<', range_bytes)[0]
+            ranging_data.append(ranging_datum)
         return ranging_data
 
 def collect_data(
