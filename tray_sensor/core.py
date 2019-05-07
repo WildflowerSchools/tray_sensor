@@ -2,7 +2,7 @@
 Provide core classes, methods, and functions for communicating with Wildflower tray sensors devices via BLE.
 """
 import bluepy.btle
-# import bitstruct
+import bitstruct
 # import tenacity
 import logging
 # import time
@@ -66,7 +66,28 @@ class TraySensorBLE:
         characteristic = ranging_service.getCharacteristics(RANGING_CHARACTERISTIC_UUID)[0]
         bytes = characteristic.read()
         peripheral.disconnect()
-        return len(bytes)
+        ranging_data = bitstruct.unpack_dict(
+            'f32f32f32f32f32f32f32f32f32f32f32f32f32f32f32f32<',
+            [
+                'range00',
+                'range01',
+                'range02',
+                'range03',
+                'range04',
+                'range05',
+                'range06',
+                'range07',
+                'range08',
+                'range09',
+                'range10',
+                'range11',
+                'range12',
+                'range13',
+                'range14',
+                'range15',
+            ],
+            bytes)
+        return ranging_data
 
 def collect_data(
     measurement_database,
