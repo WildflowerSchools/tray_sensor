@@ -3,7 +3,7 @@ Provide core classes, methods, and functions for communicating with Wildflower t
 """
 import bluepy.btle
 import bitstruct
-# import tenacity
+import tenacity
 import logging
 # import time
 # import warnings
@@ -11,14 +11,14 @@ import datetime
 
 logger = logging.getLogger(__name__)
 
-# retry_initial_wait = 0.1 # seconds
-# retry_num_attempts = 4
-# exponential_retry = tenacity.retry(
-#         stop = tenacity.stop_after_attempt(retry_num_attempts),
-#         wait = tenacity.wait_exponential(multiplier=retry_initial_wait/2),
-#         before = tenacity.before_log(logger, logging.DEBUG),
-#         after = tenacity.after_log(logger, logging.DEBUG),
-#         before_sleep = tenacity.before_sleep_log(logger, logging.WARNING))
+retry_initial_wait = 0.1 # seconds
+retry_num_attempts = 4
+exponential_retry = tenacity.retry(
+        stop = tenacity.stop_after_attempt(retry_num_attempts),
+        wait = tenacity.wait_exponential(multiplier=retry_initial_wait/2),
+        before = tenacity.before_log(logger, logging.DEBUG),
+        after = tenacity.after_log(logger, logging.DEBUG),
+        before_sleep = tenacity.before_sleep_log(logger, logging.WARNING))
 
 RANGING_SERVICE_UUID = '59462F12-9543-9999-12C8-58B459A2712D'
 RANGING_CHARACTERISTIC_UUID = '5C3A659E-897E-45E1-B016-007107C96DF7'
@@ -63,11 +63,12 @@ class TraySensorBLE:
                 self.local_name = value
 
     def read_ranging_data(self):
-        peripheral = bluepy.btle.Peripheral(self._scan_entry)
-        ranging_service = peripheral.getServiceByUUID(RANGING_SERVICE_UUID)
-        characteristic = ranging_service.getCharacteristics(RANGING_CHARACTERISTIC_UUID)[0]
-        bytes = characteristic.read()
-        peripheral.disconnect()
+        # peripheral = _get_peripheral(self._scan_entry)
+        # ranging_service = _get_service(peripheral, RANGING_SERVICE_UUID)
+        # ranging_characteristic = _get_characteristic(ranging_service, RANGING_CHARACTERISTIC_UUID)
+        # bytes = _read_characteristic(ranging_characteristic)
+        # peripheral.disconnect()
+        bytes = _get_ranging_data_bytes(self._scan_entry)
         ranging_data = []
         for anchor_index in range(NUM_ANCHORS_PER_READ):
             range_bytes = bytes[:4]
@@ -114,3 +115,28 @@ def collect_data(
             cycles_completed += 1
     except KeyboardInterrupt:
         logger.warning('Keyboard interrupt detected. Shutting down data collection.')
+
+@exponential_retry
+def _get_ranging_data_bytes(scan_entry):
+    peripheral = _get_peripheral(scan_entry)
+    ranging_service = _get_service(peripheral, RANGING_SERVICE_UUID)
+    ranging_characteristic = _get_characteristic(ranging_service, RANGING_CHARACTERISTIC_UUID)
+    bytes = _read_characteristic(ranging_characteristic)
+    peripheral.disconnect()
+    return bytes
+
+# @exponential_retry
+def _get_peripheral(scan_entry):
+    return bluepy.btle.Peripheral(scan_entry)
+
+# @exponential_retry
+def _get_service(peripheral, uuid):
+    return peripheral.getServiceByUUID(uuid)
+
+# @exponential_retry
+def _get_characteristic(service, uuid):
+    return service.getCharacteristics(uuid)[0]
+
+# @exponential_retry
+def _read_characteristic(characteristic):
+    return characteristic.read()

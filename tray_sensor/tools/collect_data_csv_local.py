@@ -84,7 +84,7 @@ def main():
     num_tray_sensor_devices = len(tray_sensor_devices)
     logging.info('Found {} tray sensors'.format(num_tray_sensor_devices))
     for mac_address, tray_sensor_device in tray_sensor_devices.items():
-        logging.debug('{} ({})'.format(mac_address, tray_sensor_device.local_name))
+        logging.info('{} ({})'.format(mac_address, tray_sensor_device.local_name))
     # Get data from Decawave devices and write to database
     logging.info('Getting data from tray sensors and writing to measurement database')
     tray_sensor.core.collect_data(
