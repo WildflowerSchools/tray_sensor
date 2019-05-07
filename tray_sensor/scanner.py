@@ -55,7 +55,7 @@ class Scanner:
                 data[tag_mac_address] = reading
 
             # remove bad tags
-            self.tags = {key: value for key, value in self.tags if tag not in bad_tags}
+            self.tags = {key: value for key, value in self.tags.items() if tag not in bad_tags}
 
             # if scan period elapses, find new tags
             time_1 = time.time()
