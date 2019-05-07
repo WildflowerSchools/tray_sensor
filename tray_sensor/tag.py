@@ -43,7 +43,7 @@ class TagDevice:
         ## 'x\x8a\x93@\x14\x1b\x83@b\x81\x82@\xcf\xa7\x82@&=\x90@\xad<\x8d@Q\xd7\x93@\x0cd\x93@\xa8^B@&k@@`|\\@F\xc8V@\xcd\xc7S@\xb9\x1fI@\x16\xfd`@\xabN\x7f@'
         data = self.characteristic.read()
         try:
-            ranges = struct.unpack('f'*(len(data)/4), data)
+            ranges = struct.unpack('f'*(len(data)//4), data)
         except struct.error as exc:
             #logger.error(exc)
             raise exc
