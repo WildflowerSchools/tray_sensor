@@ -7,13 +7,13 @@ import time
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_SCAN_PERIOD=5
+DEFAULT_SCAN_PERIOD=10
 
 COMPLETE_16B_SERVICES_TYPE_CODE = 0x03
 COMPLETE_16B_SERVICES_VALUE = '00001811-0000-1000-8000-00805f9b34fb'
 
 
-def find_tray_sensors(timeout=5):
+def find_tray_sensors(timeout=1):
     # find tray sensors by complete 16b services value
     scanner = bluepy.btle.Scanner()
     tray_sensor_scan_entries = []
@@ -51,11 +51,12 @@ class Scanner:
                 try:
                     reading = tag.read()
                 except Exception as exc:
+                    print("Error reading from {}".format(tag_mac_address))
                     bad_tags.append(tag_mac_address)
                     tag.close()
-
-                print("{} :: {}".format(tag_mac_address, reading))
-                data[tag_mac_address] = reading
+                else:
+                    print("{} :: {}".format(tag_mac_address, ["{.3f}".format(x) for x in reading]))
+                    data[tag_mac_address] = reading
 
             # remove bad tags
             self.tags = {key: value for key, value in self.tags.items() if tag not in bad_tags}
