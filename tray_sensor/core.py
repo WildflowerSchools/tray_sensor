@@ -20,21 +20,52 @@ logger = logging.getLogger(__name__)
 #         after = tenacity.after_log(logger, logging.DEBUG),
 #         before_sleep = tenacity.before_sleep_log(logger, logging.WARNING))
 
-# BLE advertising data codes
-# MANUFACTURER_SPECIFIC_TYPE_CODE = int('0xFF', 16)
-# SHOE_SENSOR_MANUFACTURER_SPECIFIC_VALUE = '8a07' # Should be  0x8a 0x07 in some format
+RANGING_SERVICE_UUID = '59462F12-9543-9999-12C8-58B459A2712D'
+RANGING_CHARACTERISTIC_UUID = '5C3A659E-897E-45E1-B016-007107C96DF7'
 
-def find_tray_sensors(timeout = 10):
+# BLE advertising data codes
+COMPLETE_16B_SERVICES_TYPE_CODE = int('0x03', 16)
+COMPLETE_16B_SERVICES_VALUE = '00001811-0000-1000-8000-00805f9b34fb'
+COMPLETE_LOCAL_NAME_TYPE_CODE = int('0x09', 16)
+
+def find_tray_sensor_devices(timeout = 10):
     scanner = bluepy.btle.Scanner()
-    tray_sensor_scan_entries = []
+    tray_sensor_devices = {}
     scan_entries = scanner.scan(timeout)
     for scan_entry in scan_entries:
         scan_data = scan_entry.getScanData()
         for type_code, description, value in scan_data:
-            if (True):
-                logger.debug('{}: {} {}\n{}'.format(scan_entry.addr, type_code, description, value))
-                tray_sensor_scan_entries.append(scan_entry)
-    return tray_sensor_scan_entries
+            if (type_code == COMPLETE_16B_SERVICES_TYPE_CODE and
+                value == COMPLETE_16B_SERVICES_VALUE):
+                mac_address = scan_entry.addr
+                tray_sensor_device = TraySensorBLE(scan_entry)
+                tray_sensor_devices[mac_address] = tray_sensor_device
+    return tray_sensor_devices
+
+class TraySensorBLE:
+    """
+    Class to represent the BLE interface to a tray sensor.
+
+    Attributes:
+        mac_address (str): MAC address as colon-separated hex string
+    """
+    def __init__(self, scan_entry):
+        self._scan_entry = scan_entry
+        # self._peripheral = None
+        # self._network_node_service = None
+        self.mac_address = scan_entry.addr
+        self.local_name = None
+        scan_data = scan_entry.getScanData()
+        for type_code, description, value in scan_data:
+            if type_code == COMPLETE_LOCAL_NAME_TYPE_CODE:
+                self.local_name = value
+
+    def read_ranging_data(self):
+        peripheral = bluepy.btle.Peripheral(self._scan_entry)
+        ranging_service = peripheral.getServiceByUUID(RANGING_SERVICE_UUID)
+        characteristic = ranging_service.getCharacteristics(RANGING_CHARACTERISTIC_UUID)[0]
+        bytes = characteristic.read()
+        return len(bytes)
 
 def collect_data(
     measurement_database,

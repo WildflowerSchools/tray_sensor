@@ -19,10 +19,11 @@ class MeasurementDatabaseCSVLocal(MeasurementDatabase):
         """
         Constructor for MeasurementDatabaseCSVLocal.
 
-        Included fields must include 'timestamp'. Any data that is sent to this
-        database that does not match the specified included fields will be
-        silently dropped. Constructor will raise an exception if required fields
-        are missing or any of the field names are not recognized.
+        Included fields must include 'timestamp' and 'mac_address'. Any data
+        that is sent to this database that does not match the specified included
+        fields will be silently dropped. Constructor will raise an exception if
+        required fields are missing or any of the field names are not
+        recognized.
 
         Parameters:
             directory (string): Path to directory for CSV file
@@ -31,8 +32,8 @@ class MeasurementDatabaseCSVLocal(MeasurementDatabase):
         """
         if 'timestamp' not in fields:
             raise ValueError('Included fields must include timestamp')
-        if 'device_id' not in fields:
-            raise ValueError('Included fields must include device_id')
+        if 'mac_address' not in fields:
+            raise ValueError('Included fields must include mac_address')
         self._fields = fields
         file_timestamp = time.strftime('%y%m%d_%H%M%S', time.gmtime())
         path = os.path.join(
@@ -72,7 +73,7 @@ class MeasurementDatabaseCSVLocal(MeasurementDatabase):
         """
         Write measurement data to the database.
 
-        Device data must include 'timestamp'.
+        Device data must include 'timestamp' and 'mac_address'.
 
         Parameters:
             device_data (dict): Dictionary containing device data
@@ -80,8 +81,8 @@ class MeasurementDatabaseCSVLocal(MeasurementDatabase):
         # Buld the row
         if 'timestamp' not in device_data.keys():
             raise ValueError('Data must include timestamp')
-        if 'device_id' not in device_data.keys():
-            raise ValueError('Data must include timestamp')
+        if 'mac_address' not in device_data.keys():
+            raise ValueError('Data must include mac_address')
         row_list = []
         for field in self._fields:
             row_list.append(_format_datum(field, device_data.get(field)))
