@@ -51,6 +51,7 @@ class Scanner:
                     bad_tags.append(tag_mac_address)
                     tag.close()
 
+                print("{} :: {}".format(tag_mac_address, reading))
                 data[tag_mac_address] = reading
 
             # remove bad tags
