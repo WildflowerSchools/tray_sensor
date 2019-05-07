@@ -57,7 +57,7 @@ def main():
     else:
         logging.info('Data will be collected for {} cycles'.format(cycles))
     # Build field list
-    fields = ['timestamp', 'mac_address']
+    fields = ['timestamp', 'mac_address', 'local_name', 'ranging_data']
     # fields = []
     # if field_list_path is not None:
     #     with open(field_list_path, 'r') as file:
@@ -86,11 +86,11 @@ def main():
     for mac_address, tray_sensor_device in tray_sensor_devices.items():
         logging.debug('{} ({})'.format(mac_address, tray_sensor_device.local_name))
     # Get data from Decawave devices and write to database
-    # logging.info('Getting data from shoe sensors and writing to measurement database')
-    # tray_sensor.core.collect_data(
-    #     measurement_database = measurement_database,
-    #     mac_addresses = mac_addresses,
-    #     cycles = cycles)
+    logging.info('Getting data from tray sensors and writing to measurement database')
+    tray_sensor.core.collect_data(
+        measurement_database = measurement_database,
+        tray_sensor_devices = tray_sensor_devices,
+        cycles = cycles)
 
 if __name__ == '__main__':
     main()

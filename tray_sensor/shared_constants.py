@@ -11,14 +11,19 @@ DATA_FIELD_INFO = collections.OrderedDict([
         'type': 'datetime',
         'string_format': '{}'
     }),
-    ('device_id', {
-        'field_name_sentence_caps': "Device ID",
-        'type': 'string',
-        'string_format': '{}'
-    }),
     ('mac_address', {
         'field_name_sentence_caps': "MAC address",
         'type': 'string',
+        'string_format': '{}',
+    }),
+    ('local_name', {
+        'field_name_sentence_caps': "Local name",
+        'type': 'string',
+        'string_format': '{}',
+    }),
+    ('ranging_data', {
+        'field_name_sentence_caps': "Ranging data",
+        'type': 'integer',
         'string_format': '{}',
     }),
     ('rssi', {

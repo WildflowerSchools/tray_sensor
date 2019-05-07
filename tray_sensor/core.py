@@ -65,13 +65,13 @@ class TraySensorBLE:
         ranging_service = peripheral.getServiceByUUID(RANGING_SERVICE_UUID)
         characteristic = ranging_service.getCharacteristics(RANGING_CHARACTERISTIC_UUID)[0]
         bytes = characteristic.read()
+        peripheral.disconnect()
         return len(bytes)
 
 def collect_data(
     measurement_database,
-    mac_addresses,
-    cycles = 1,
-    timeout = 10):
+    tray_sensor_devices,
+    cycles = 1):
     """
     Collect specified data from specified devices and save in specified
     database.
@@ -81,7 +81,7 @@ def collect_data(
 
     Parameters:
         measurement_database (MeasurementDatabase): Database where data should be stored
-        mac_addresses (list): MAC addresses for devices we want to collect from
+        tray_sensor_devices (dict): Dictionary of tray sensor devices (keys are MAC addresses, values are TraySensorBLE objects)
         cycles (int): Number of times to collect data from each device (default is 1)
     """
     if cycles == 0:
@@ -89,30 +89,20 @@ def collect_data(
     else:
         logger.info('Collecting data for {} cycles'.format(cycles))
     cycles_completed = 0
-    scanner = bluepy.btle.Scanner().withDelegate(ShoeSensorDelegate(measurement_database, mac_addresses))
     try:
         while cycles == 0 or cycles_completed < cycles:
             logger.info('Data collection cycle {}'.format(cycles_completed + 1))
-            scanner.scan(timeout)
+            for mac_address, tray_sensor_device in tray_sensor_devices.items():
+                timestamp = datetime.datetime.now(datetime.timezone.utc)
+                local_name = tray_sensor_device.local_name
+                ranging_data = tray_sensor_device.read_ranging_data()
+                device_data = {
+                    'timestamp': timestamp,
+                    'mac_address': mac_address,
+                    'local_name': local_name,
+                    'ranging_data': ranging_data
+                }
+                measurement_database.put_device_data(device_data)
             cycles_completed += 1
     except KeyboardInterrupt:
         logger.warning('Keyboard interrupt detected. Shutting down data collection.')
-
-class ShoeSensorDelegate(bluepy.btle.DefaultDelegate):
-    def __init__(self, measurement_database, mac_addresses):
-        bluepy.btle.DefaultDelegate.__init__(self)
-        self.mac_addresses = mac_addresses
-        self.measurement_database = measurement_database
-
-    def handleDiscovery(self, dev, isNewDev, isNewData):
-        mac_address = dev.addr
-        if mac_address in self.mac_addresses:
-            timestamp = datetime.datetime.now(datetime.timezone.utc)
-            rssi = dev.rssi
-            logger.debug('{}: {} dB'.format(mac_address, rssi))
-            device_data = {
-                'timestamp': timestamp,
-                'mac_address': mac_address,
-                'rssi': rssi
-            }
-            self.measurement_database.put_device_data(device_data)
