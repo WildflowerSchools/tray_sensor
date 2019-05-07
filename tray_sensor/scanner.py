@@ -36,8 +36,11 @@ class Scanner:
         for tag_scan_entry in tag_scan_entries:
             mac_address = tag_scan_entry.addr
             if mac_address not in self.tags:
-                tag = TagDevice(tag_scan_entry)
-                self.tags[mac_address] = tag
+                try:
+                    tag = TagDevice(tag_scan_entry)
+                    self.tags[mac_address] = tag
+                except bluepy.btle.BTLEDisconnectError as exc:
+                    pass
 
     def run(self):
         data = defaultdict(list)
