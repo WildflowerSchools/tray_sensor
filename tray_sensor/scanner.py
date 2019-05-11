@@ -63,6 +63,7 @@ class Scanner:
                     device_data = {
                         'timestamp': timestamp,
                         'mac_address': tag_mac_address,
+                        'local_name': tag.name,
                         'ranging_data': reading
                     }
                     measurement_database.put_device_data(device_data)

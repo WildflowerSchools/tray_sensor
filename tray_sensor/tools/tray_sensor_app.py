@@ -3,7 +3,12 @@ from tray_sensor.databases.measurement_database.csv_local import MeasurementData
 import argparse
 import logging
 
-TRAY_SENSOR_DATA_FIELDS = ['timestamp', 'mac_address', 'ranging_data']
+TRAY_SENSOR_DATA_FIELDS = [
+    'timestamp',
+    'mac_address',
+    'local_name',
+    'ranging_data'
+]
 
 def main():
     parser = argparse.ArgumentParser(
