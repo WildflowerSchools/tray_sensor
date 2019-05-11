@@ -42,6 +42,7 @@ class Scanner:
                     self.tags[mac_address] = tag
                 except bluepy.btle.BTLEDisconnectError as exc:
                     pass
+        logger.debug('Found tags: {}'.format(', '.join(['{} ({})'.format(tag.name, mac_address) for mac_address, tag in self.tags.items()])))
 
     def run(self, measurement_database):
         data = defaultdict(list)
@@ -52,11 +53,11 @@ class Scanner:
                 try:
                     reading = tag.read()
                 except Exception as exc:
-                    print("Error reading from {}".format(tag_mac_address))
+                    logger.info("Error reading from {} ({})".format(tag.name, tag_mac_address))
                     bad_tags.append(tag_mac_address)
                     tag.close()
                 else:
-                    print("{} :: {}".format(tag_mac_address, ["{:.3f}".format(x) for x in reading]))
+                    logger.debug("{} :: {}".format(tag_mac_address, ["{:.3f}".format(x) for x in reading]))
                     data[tag_mac_address] = reading
                     timestamp = datetime.datetime.now(datetime.timezone.utc)
                     device_data = {
