@@ -6,6 +6,9 @@ logger = logging.getLogger(__name__)
 
 COMPLETE_LOCAL_NAME_TYPE_CODE = 0x09
 
+SENTINEL_VALUE_BYTES = b'\xd1\xaa\xaa\xaa'
+SENTINEL_VALUE_FLOAT = struct.unpack('f', SENTINEL_VALUE_BYTES)[0]
+
 def get_name(scan_entry):
     scan_data = scan_entry.getScanData()
     for type_code, description, value in scan_data:
@@ -47,5 +50,6 @@ class TagDevice:
         except struct.error as exc:
             #logger.error(exc)
             raise exc
-    
+        # Remove missing values
+        ranges = [None if range == SENTINEL_VALUE_FLOAT else range for range in ranges]
         return ranges

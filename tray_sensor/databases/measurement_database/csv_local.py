@@ -97,7 +97,7 @@ def _format_datum(field, datum):
         raise ValueError('Field name {} not recognized'.format(field))
     if field_info.get('list'):
         for index in range(field_info['max_list_length']):
-            if datum is not None and index < len(datum):
+            if datum[index] is not None and index < len(datum):
                 string_list.append(field_info['string_format'].format(datum[index]))
             else:
                 string_list.append('')

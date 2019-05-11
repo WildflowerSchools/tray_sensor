@@ -57,7 +57,7 @@ class Scanner:
                     bad_tags.append(tag_mac_address)
                     tag.close()
                 else:
-                    logger.debug("{} :: {}".format(tag_mac_address, ["{:.3f}".format(x) for x in reading]))
+                    logger.debug("{} :: {}".format(tag_mac_address, [None if x is None else "{:.3f}".format(x) for x in reading]))
                     data[tag_mac_address] = reading
                     timestamp = datetime.datetime.now(datetime.timezone.utc)
                     device_data = {
