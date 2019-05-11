@@ -14,7 +14,7 @@ COMPLETE_16B_SERVICES_TYPE_CODE = 0x03
 COMPLETE_16B_SERVICES_VALUE = '00001811-0000-1000-8000-00805f9b34fb'
 
 
-def find_tray_sensors(timeout=1):
+def find_tray_sensors(timeout = 5):
     # find tray sensors by complete 16b services value
     scanner = bluepy.btle.Scanner()
     tray_sensor_scan_entries = []
@@ -33,16 +33,27 @@ class Scanner:
         self.scan_period = scan_period
 
     def find_new_tags(self):
+        # It shouldn't be necessary to clear tags, but scan often disconnects
+        # peripherals, so for now we just start over every time
+        self.clear_tags()
+        # Scan for tray sensors
         tag_scan_entries = find_tray_sensors()
+        # Add new tray sensors to our list
         for tag_scan_entry in tag_scan_entries:
             mac_address = tag_scan_entry.addr
             if mac_address not in self.tags:
                 try:
                     tag = TagDevice(tag_scan_entry)
                     self.tags[mac_address] = tag
+                    logger.info('Found new tag: {} ({})'.format(tag.name, mac_address))
                 except bluepy.btle.BTLEDisconnectError as exc:
                     pass
-        logger.debug('Found tags: {}'.format(', '.join(['{} ({})'.format(tag.name, mac_address) for mac_address, tag in self.tags.items()])))
+        logger.debug('Known tags: {}'.format(', '.join(['{} ({})'.format(tag.name, mac_address) for mac_address, tag in self.tags.items()])))
+
+    def clear_tags(self):
+        for mac_address, tag in self.tags.items():
+            tag.close()
+        self.tags = {}
 
     def run(self, measurement_database):
         data = defaultdict(list)
@@ -75,5 +86,5 @@ class Scanner:
             time_1 = time.time()
             elapsed_time  = time_1 - time_0
             if elapsed_time >= self.scan_period:
-                time_0 = time_1
                 self.find_new_tags()
+                time_0 = time.time()
