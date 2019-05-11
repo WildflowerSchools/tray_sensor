@@ -45,8 +45,8 @@ class Scanner:
                     tag = TagDevice(tag_scan_entry)
                     self.tags[mac_address] = tag
                     logger.info('Found tag: {} ({})'.format(tag.name, mac_address))
-                except bluepy.btle.BTLEDisconnectError as exc:
-                    pass
+                except Exception as exc:
+                    logger.info("Failed to connect to {} ({})".format(tag.name, mac_address))
 
     def clear_tags(self):
         logger.info('Clearing tag list')
