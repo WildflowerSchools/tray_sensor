@@ -3,6 +3,7 @@ from collections import defaultdict
 from .tag import TagDevice
 import logging
 import time
+import datetime
 
 
 logger = logging.getLogger(__name__)
@@ -42,7 +43,7 @@ class Scanner:
                 except bluepy.btle.BTLEDisconnectError as exc:
                     pass
 
-    def run(self):
+    def run(self, measurement_database):
         data = defaultdict(list)
         time_0 = time.time()
         while True:
@@ -57,6 +58,13 @@ class Scanner:
                 else:
                     print("{} :: {}".format(tag_mac_address, ["{:.3f}".format(x) for x in reading]))
                     data[tag_mac_address] = reading
+                    timestamp = datetime.datetime.now(datetime.timezone.utc)
+                    device_data = {
+                        'timestamp': timestamp,
+                        'mac_address': tag_mac_address,
+                        'ranging_data': reading
+                    }
+                    measurement_database.put_device_data(device_data)
 
             # remove bad tags
             self.tags = {key: value for key, value in self.tags.items() if key not in bad_tags}
@@ -67,4 +75,3 @@ class Scanner:
             if elapsed_time >= self.scan_period:
                 time_0 = time_1
                 self.find_new_tags()
-
