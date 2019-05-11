@@ -1,5 +1,6 @@
 import struct
 import bluepy
+import tenacity
 import logging
 
 logger = logging.getLogger(__name__)
@@ -11,6 +12,16 @@ NUM_BYTES_PER_ANCHOR = 4
 
 SENTINEL_VALUE_BYTES = b'\xd1\xaa\xaa\xaa'
 SENTINEL_VALUE_FLOAT = struct.unpack('f', SENTINEL_VALUE_BYTES)[0]
+
+RETRY_INITIAL_WAIT = 0.1 # seconds
+RETRY_NUM_ATTEMPTS = 4
+
+exponential_retry = tenacity.retry(
+        stop = tenacity.stop_after_attempt(RETRY_NUM_ATTEMPTS),
+        wait = tenacity.wait_exponential(multiplier=RETRY_INITIAL_WAIT/2),
+        before = tenacity.before_log(logger, logging.DEBUG),
+        after = tenacity.after_log(logger, logging.DEBUG),
+        before_sleep = tenacity.before_sleep_log(logger, logging.WARNING))
 
 def get_name(scan_entry):
     scan_data = scan_entry.getScanData()
@@ -26,9 +37,9 @@ class TagDevice:
     def __init__(self, scan_entry):
         self.scan_entry = scan_entry
         self._name = get_name(self.scan_entry)
-        self.peripheral = bluepy.btle.Peripheral(scan_entry)
-        self.service = self.peripheral.getServiceByUUID(self.SERVICE_UUID)
-        self.characteristic = self.service.getCharacteristics(self.CHARACTERISTIC_UUID)[0]
+        self.peripheral = _get_peripheral(scan_entry)
+        self.service = _get_service(self.peripheral, self.SERVICE_UUID)
+        self.characteristic = _get_characteristic(self.service, self.CHARACTERISTIC_UUID)
 
     def close(self):
         try:
@@ -47,7 +58,7 @@ class TagDevice:
     def read(self):
         ## '0x78 0x8A 0x93 0x40 0x14 0x1B 0x83 0x40 0x62 0x81 0x82 0x40 0xCF 0xA7 0x82 0x40 0x26 0x3D 0x90 0x40 0xAD 0x3C 0x8D 0x40 0x51 0xD7 0x93 0x40 0x0C 0x64 0x93 0x40 0xA8 0x5E 0x42 0x40 0x26 0x6B 0x40 0x40 0x60 0x7C 0x5C 0x40 0x46 0xC8 0x56 0x40 0xCD 0xC7 0x53 0x40 0xB9 0x1F 0x49 0x40 0x16 0xFD 0x60 0x40 0xAB 0x4E 0x7F 0x40'
         ## 'x\x8a\x93@\x14\x1b\x83@b\x81\x82@\xcf\xa7\x82@&=\x90@\xad<\x8d@Q\xd7\x93@\x0cd\x93@\xa8^B@&k@@`|\\@F\xc8V@\xcd\xc7S@\xb9\x1fI@\x16\xfd`@\xabN\x7f@'
-        data = self.characteristic.read()
+        data = _read_characteristic(self.characteristic)
         if len(data) != NUM_ANCHORS * NUM_BYTES_PER_ANCHOR:
             raise ValueError('Expected {} bytes for {} anchors but received {} bytes'.format(
                 NUM_ANCHORS * NUM_BYTES_PER_ANCHOR,
@@ -62,3 +73,19 @@ class TagDevice:
         # Remove missing values
         ranges = [None if range == SENTINEL_VALUE_FLOAT else range for range in ranges]
         return ranges
+
+@exponential_retry
+def _get_peripheral(scan_entry):
+    return bluepy.btle.Peripheral(scan_entry)
+
+@exponential_retry
+def _get_service(peripheral, uuid):
+    return peripheral.getServiceByUUID(uuid)
+
+@exponential_retry
+def _get_characteristic(service, uuid):
+    return service.getCharacteristics(uuid)[0]
+
+@exponential_retry
+def _read_characteristic(characteristic):
+    return characteristic.read()
