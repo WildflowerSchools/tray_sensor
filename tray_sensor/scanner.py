@@ -8,13 +8,14 @@ import datetime
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_SCAN_PERIOD=10
+DEFAULT_SCAN_PERIOD = 10
+DEFAULT_TIMEOUT = 5
 
 COMPLETE_16B_SERVICES_TYPE_CODE = 0x03
 COMPLETE_16B_SERVICES_VALUE = '00001811-0000-1000-8000-00805f9b34fb'
 
 
-def find_tray_sensors(timeout = 5):
+def find_tray_sensors(timeout = DEFAULT_TIMEOUT):
     # find tray sensors by complete 16b services value
     scanner = bluepy.btle.Scanner()
     tray_sensor_scan_entries = []
@@ -33,9 +34,7 @@ class Scanner:
         self.scan_period = scan_period
 
     def find_new_tags(self):
-        # It shouldn't be necessary to clear tags, but scan often disconnects
-        # peripherals, so for now we just start over every time
-        self.clear_tags()
+        logger.info('Finding new tags')
         # Scan for tray sensors
         tag_scan_entries = find_tray_sensors()
         # Add new tray sensors to our list
@@ -45,17 +44,24 @@ class Scanner:
                 try:
                     tag = TagDevice(tag_scan_entry)
                     self.tags[mac_address] = tag
-                    logger.info('Found new tag: {} ({})'.format(tag.name, mac_address))
+                    logger.info('Found tag: {} ({})'.format(tag.name, mac_address))
                 except bluepy.btle.BTLEDisconnectError as exc:
                     pass
-        logger.debug('Known tags: {}'.format(', '.join(['{} ({})'.format(tag.name, mac_address) for mac_address, tag in self.tags.items()])))
 
     def clear_tags(self):
+        logger.info('Clearing tag list')
+        # Close connections
         for mac_address, tag in self.tags.items():
             tag.close()
+        # Clear tag list
         self.tags = {}
 
+    def reset_tags(self):
+        self.clear_tags()
+        self.find_new_tags()
+
     def run(self, measurement_database):
+        logger.info('Collecting data')
         data = defaultdict(list)
         time_0 = time.time()
         while True:
@@ -86,5 +92,5 @@ class Scanner:
             time_1 = time.time()
             elapsed_time  = time_1 - time_0
             if elapsed_time >= self.scan_period:
-                self.find_new_tags()
+                self.reset_tags()
                 time_0 = time.time()
