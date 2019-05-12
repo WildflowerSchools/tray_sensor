@@ -26,6 +26,20 @@ def main():
         help = 'base of filename for output file; timestamp and .csv extension added automatically (default is tray_sensor_data)'
     )
     parser.add_argument(
+        '-c',
+        '--collection_period',
+        type = int,
+        default = 300,
+        help = 'duration of data collection between scans for tags, in seconds (default is 300)'
+    )
+    parser.add_argument(
+        '-t',
+        '--timeout',
+        type = int,
+        default = 10,
+        help = 'duration of scan for tags, in seconds (default 10)'
+    )
+    parser.add_argument(
         '-l',
         '--loglevel',
         help = 'log level (e.g., debug or warning or info)'
@@ -34,6 +48,8 @@ def main():
     args = parser.parse_args()
     directory = args.dir
     filename_base = args.output_file
+    collection_period = args.collection_period
+    timeout = args.timeout
     loglevel = args.loglevel
     fields = TRAY_SENSOR_DATA_FIELDS
     # Set log level
@@ -49,9 +65,8 @@ def main():
         fields = fields
     )
     # Scan for tags
-    sc = scanner.Scanner()
+    sc = scanner.Scanner(collection_period, timeout)
     sc.find_new_tags()
-    logging.info('Found tags: {}'.format(', '.join(['{} ({})'.format(tag.name, mac_address) for mac_address, tag in sc.tags.items()])))
     # Collect data
     sc.run(measurement_database)
 

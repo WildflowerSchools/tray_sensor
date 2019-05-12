@@ -8,8 +8,8 @@ import datetime
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_SCAN_PERIOD = 10
-DEFAULT_TIMEOUT = 5
+DEFAULT_COLLECTION_PERIOD = 300
+DEFAULT_TIMEOUT = 10
 
 COMPLETE_16B_SERVICES_TYPE_CODE = 0x03
 COMPLETE_16B_SERVICES_VALUE = '00001811-0000-1000-8000-00805f9b34fb'
@@ -29,14 +29,15 @@ def find_tray_sensors(timeout = DEFAULT_TIMEOUT):
     return tray_sensor_scan_entries
 
 class Scanner:
-    def __init__(self, scan_period=DEFAULT_SCAN_PERIOD):
+    def __init__(self, collection_period = DEFAULT_COLLECTION_PERIOD, timeout = DEFAULT_TIMEOUT):
         self.tags = {}
-        self.scan_period = scan_period
+        self.collection_period = collection_period
+        self.timeout = timeout
 
     def find_new_tags(self):
-        logger.info('Finding new tags')
+        logger.info('Scanning for new tags for {} seconds'.format(self.timeout))
         # Scan for tray sensors
-        tag_scan_entries = find_tray_sensors()
+        tag_scan_entries = find_tray_sensors(self.timeout)
         # Add new tray sensors to our list
         for tag_scan_entry in tag_scan_entries:
             mac_address = tag_scan_entry.addr
@@ -64,6 +65,7 @@ class Scanner:
         logger.info('Collecting data')
         data = defaultdict(list)
         time_0 = time.time()
+        logger.info('Collecting data for {} seconds'.format(self.collection_period))
         while True:
             bad_tags = []
             for tag_mac_address, tag in self.tags.items():
@@ -88,9 +90,10 @@ class Scanner:
             # remove bad tags
             self.tags = {key: value for key, value in self.tags.items() if key not in bad_tags}
 
-            # if scan period elapses, find new tags
+            # if collection period elapses, find new tags
             time_1 = time.time()
             elapsed_time  = time_1 - time_0
-            if elapsed_time >= self.scan_period:
+            if elapsed_time >= self.collection_period:
                 self.reset_tags()
                 time_0 = time.time()
+                logger.info('Collecting data for {} seconds'.format(self.collection_period))
