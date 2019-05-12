@@ -37,9 +37,9 @@ class TagDevice:
     def __init__(self, scan_entry):
         self.scan_entry = scan_entry
         self._name = get_name(self.scan_entry)
-        self.peripheral = _get_peripheral(scan_entry)
-        self.service = _get_service(self.peripheral, self.SERVICE_UUID)
-        self.characteristic = _get_characteristic(self.service, self.CHARACTERISTIC_UUID)
+        self.peripheral = self._get_peripheral()
+        self.service = self._get_service()
+        self.characteristic = self._get_characteristic()
 
     def close(self):
         try:
@@ -58,7 +58,7 @@ class TagDevice:
     def read(self):
         ## '0x78 0x8A 0x93 0x40 0x14 0x1B 0x83 0x40 0x62 0x81 0x82 0x40 0xCF 0xA7 0x82 0x40 0x26 0x3D 0x90 0x40 0xAD 0x3C 0x8D 0x40 0x51 0xD7 0x93 0x40 0x0C 0x64 0x93 0x40 0xA8 0x5E 0x42 0x40 0x26 0x6B 0x40 0x40 0x60 0x7C 0x5C 0x40 0x46 0xC8 0x56 0x40 0xCD 0xC7 0x53 0x40 0xB9 0x1F 0x49 0x40 0x16 0xFD 0x60 0x40 0xAB 0x4E 0x7F 0x40'
         ## 'x\x8a\x93@\x14\x1b\x83@b\x81\x82@\xcf\xa7\x82@&=\x90@\xad<\x8d@Q\xd7\x93@\x0cd\x93@\xa8^B@&k@@`|\\@F\xc8V@\xcd\xc7S@\xb9\x1fI@\x16\xfd`@\xabN\x7f@'
-        data = _read_characteristic(self.characteristic)
+        data = self._read_characteristic()
         if len(data) != NUM_ANCHORS * NUM_BYTES_PER_ANCHOR:
             raise ValueError('Expected {} bytes for {} anchors but received {} bytes'.format(
                 NUM_ANCHORS * NUM_BYTES_PER_ANCHOR,
@@ -74,18 +74,49 @@ class TagDevice:
         ranges = [None if range == SENTINEL_VALUE_FLOAT else range for range in ranges]
         return ranges
 
-@exponential_retry
-def _get_peripheral(scan_entry):
-    return bluepy.btle.Peripheral(scan_entry)
+    @exponential_retry
+    def _get_peripheral(self):
+        peripheral = bluepy.btle.Peripheral(self.scan_entry)
+        return peripheral
 
-@exponential_retry
-def _get_service(peripheral, uuid):
-    return peripheral.getServiceByUUID(uuid)
+    def _get_service(self):
+        try:
+            service = self.peripheral.getServiceByUUID(self.SERVICE_UUID)
+        except Exception as exc:
+            logger.warning('Failed to retrieve service for {} ({}) [Exception: {}]. Attempting to reconnect.'.format(
+                self.name,
+                self.mac_address,
+                exc))
+            self.close()
+            self.peripheral = self._get_peripheral()
+            service = self.peripheral.getServiceByUUID(self.SERVICE_UUID)
+        return service
 
-@exponential_retry
-def _get_characteristic(service, uuid):
-    return service.getCharacteristics(uuid)[0]
+    def _get_characteristic(self):
+        try:
+            characteristic = self.service.getCharacteristics(self.CHARACTERISTIC_UUID)[0]
+        except Exception as exc:
+            logger.warning('Failed to retrieve characteristic from {} ({}) [Exception: {}]. Attempting to reconnect.'.format(
+                self.name,
+                self.mac_address,
+                exc))
+            self.close()
+            self.peripheral = self._get_peripheral()
+            self.service = self._get_service()
+            characteristic = self.service.getCharacteristics(self.CHARACTERISTIC_UUID)[0]
+        return characteristic
 
-@exponential_retry
-def _read_characteristic(characteristic):
-    return characteristic.read()
+    def _read_characteristic(self):
+        try:
+            data = self.characteristic.read()
+        except Exception as exc:
+            logger.warning('Failed to read data from {} ({}) [Exception: {}]. Attempting to reconnect.'.format(
+                self.name,
+                self.scan_entry.addr,
+                exc))
+            self.close()
+            self.peripheral = self._get_peripheral()
+            self.service = self._get_service()
+            self.characteristic = self._get_characteristic()
+            data = self.characteristic.read()
+        return data

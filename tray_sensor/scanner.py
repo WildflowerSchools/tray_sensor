@@ -46,7 +46,7 @@ class Scanner:
                     self.tags[mac_address] = tag
                     logger.info('Found tag: {} ({})'.format(tag.name, mac_address))
                 except Exception as exc:
-                    logger.info("Failed to connect to {} ({})".format(tag.name, mac_address))
+                    logger.warning("Failed to connect to {} [Exception: {}]. Not adding to tag list.".format(mac_address, exc))
 
     def clear_tags(self):
         logger.info('Clearing tag list')
@@ -70,7 +70,7 @@ class Scanner:
                 try:
                     reading = tag.read()
                 except Exception as exc:
-                    logger.info("Error reading from {} ({})".format(tag.name, tag_mac_address))
+                    logger.warning("Error reading from {} ({}) [Exception: {}]. Removing from tag list.".format(tag.name, tag_mac_address, exc))
                     bad_tags.append(tag_mac_address)
                     tag.close()
                 else:
