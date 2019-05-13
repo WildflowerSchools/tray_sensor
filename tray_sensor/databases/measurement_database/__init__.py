@@ -13,9 +13,7 @@ class MeasurementDatabase:
         device_data):
         """
         Write measurement data to the database.
-
-        Device data must include 'timestamp' and 'device_id'.
-
+        
         Parameters:
             device_data (dict): Dictionary containing device data
         """

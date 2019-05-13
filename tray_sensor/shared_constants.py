@@ -1,5 +1,5 @@
 """
-Define constants that are shared by the submodules of shoe_sensor
+Define constants that are shared by the submodules of tray_sensor
 """
 
 import collections
@@ -33,11 +33,3 @@ DATA_FIELD_INFO = collections.OrderedDict([
         'type': 'integer',
         'string_format': '{}',
     })])
-
-# TYPE_CONVERTERS = {
-#     'string': str,
-#     'boolean': bool,
-#     'integer_hex': lambda x: int(str(x), base=0),
-#     'integer': lambda x: int(x),
-#     'float': float
-# }
