@@ -7,6 +7,7 @@ TRAY_SENSOR_DATA_FIELDS = [
     'timestamp',
     'mac_address',
     'local_name',
+    'usec_timestamp',
     'ranging_data'
 ]
 

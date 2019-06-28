@@ -83,7 +83,8 @@ class Scanner:
                         'timestamp': timestamp,
                         'mac_address': tag_mac_address,
                         'local_name': tag.name,
-                        'ranging_data': reading
+                        'usec_timestamp': reading[0],
+                        'ranging_data': reading[1:]
                     }
                     measurement_database.put_device_data(device_data)
 

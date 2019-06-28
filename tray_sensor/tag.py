@@ -9,6 +9,7 @@ COMPLETE_LOCAL_NAME_TYPE_CODE = 0x09
 
 NUM_ANCHORS = 16
 NUM_BYTES_PER_ANCHOR = 4
+NUM_BYTES_PER_TIMESTAMP = 8
 
 SENTINEL_VALUE_BYTES = b'\xd1\xaa\xaa\xba'
 SENTINEL_VALUE_FLOAT = struct.unpack('f', SENTINEL_VALUE_BYTES)[0]
@@ -59,14 +60,14 @@ class TagDevice:
         ## '0x78 0x8A 0x93 0x40 0x14 0x1B 0x83 0x40 0x62 0x81 0x82 0x40 0xCF 0xA7 0x82 0x40 0x26 0x3D 0x90 0x40 0xAD 0x3C 0x8D 0x40 0x51 0xD7 0x93 0x40 0x0C 0x64 0x93 0x40 0xA8 0x5E 0x42 0x40 0x26 0x6B 0x40 0x40 0x60 0x7C 0x5C 0x40 0x46 0xC8 0x56 0x40 0xCD 0xC7 0x53 0x40 0xB9 0x1F 0x49 0x40 0x16 0xFD 0x60 0x40 0xAB 0x4E 0x7F 0x40'
         ## 'x\x8a\x93@\x14\x1b\x83@b\x81\x82@\xcf\xa7\x82@&=\x90@\xad<\x8d@Q\xd7\x93@\x0cd\x93@\xa8^B@&k@@`|\\@F\xc8V@\xcd\xc7S@\xb9\x1fI@\x16\xfd`@\xabN\x7f@'
         data = self._read_characteristic()
-        if len(data) != NUM_ANCHORS * NUM_BYTES_PER_ANCHOR:
+        if len(data) != NUM_ANCHORS * NUM_BYTES_PER_ANCHOR + NUM_BYTES_PER_TIMESTAMP:
             raise ValueError('Expected {} bytes for {} anchors but received {} bytes'.format(
-                NUM_ANCHORS * NUM_BYTES_PER_ANCHOR,
+                NUM_ANCHORS * NUM_BYTES_PER_ANCHOR + NUM_BYTES_PER_TIMESTAMP,
                 NUM_ANCHORS,
                 len(data)
             ))
         try:
-            ranges = struct.unpack('f'*NUM_ANCHORS, data)
+            ranges = struct.unpack('Q%df'%NUM_ANCHORS, data)
         except struct.error as exc:
             #logger.error(exc)
             raise exc
