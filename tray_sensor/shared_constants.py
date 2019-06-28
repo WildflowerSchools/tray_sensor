@@ -21,6 +21,11 @@ DATA_FIELD_INFO = collections.OrderedDict([
         'type': 'string',
         'string_format': '{}',
     }),
+    ('usec_timestamp', {
+        'field_name_sentence_caps': "Uptime at Measurement",
+        'type': 'long',
+        'string_format': '{}',
+    }),
     ('ranging_data', {
         'field_name_sentence_caps': "Ranging data",
         'type': 'float',
