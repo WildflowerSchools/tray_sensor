@@ -60,11 +60,13 @@ def main():
             filename_base,
             file_timestamp))
     # Initialize database
-    data_field_names = ['range{:02}'.format(anchor_index) for anchor_index in range(16)]
+    data_field_names = ['range_anchor{:02}'.format(anchor_index) for anchor_index in range(16)]
+    convert_to_string_functions = {data_field_names[anchor_index]: lambda range: '{:.3f}'.format(range) for anchor_index in range(16)}
     convert_from_string_functions = {data_field_names[anchor_index]: lambda string: float(string) for anchor_index in range(16)}
     database_connection = DatabaseConnectionCSV(
         path,
         data_field_names = data_field_names,
+        convert_to_string_functions = convert_to_string_functions,
         convert_from_string_functions = convert_from_string_functions
     )
     # Scan for tags

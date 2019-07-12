@@ -116,7 +116,7 @@ class Scanner:
                     logger.debug("{} :: {}".format(tag_mac_address, [None if x is None else "{:.3f}".format(x) for x in reading]))
                     data[tag_mac_address] = reading
                     timestamp = datetime.datetime.now(datetime.timezone.utc)
-                    device_data = {'range{:02}'.format(anchor_index): reading[anchor_index] for anchor_index in range(len(reading))}
+                    device_data = {'range_anchor{:02}'.format(anchor_index): reading[anchor_index] for anchor_index in range(len(reading))}
                     database_connection.write_data_object_time_series(
                         timestamp = timestamp,
                         object_id = tag_mac_address,
