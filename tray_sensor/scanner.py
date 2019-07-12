@@ -61,7 +61,44 @@ class Scanner:
         self.clear_tags()
         self.find_new_tags()
 
-    def run(self, measurement_database):
+    def run(self, database_connection):
+        logger.info('Collecting data')
+        data = defaultdict(list)
+        time_0 = time.time()
+        logger.info('Collecting data for {} seconds'.format(self.collection_period))
+        while True:
+            bad_tags = []
+            for tag_mac_address, tag in self.tags.items():
+                try:
+                    reading = tag.read()
+                except Exception as exc:
+                    logger.warning("Error reading from {} ({}) [Exception: {}]. Removing from tag list.".format(tag.name, tag_mac_address, exc))
+                    bad_tags.append(tag_mac_address)
+                    tag.close()
+                else:
+                    logger.debug("{} :: {}".format(tag_mac_address, [None if x is None else "{:.3f}".format(x) for x in reading]))
+                    data[tag_mac_address] = reading
+                    timestamp = datetime.datetime.now(datetime.timezone.utc)
+                    device_data = {'range_anchor{:02}'.format(anchor_index): reading[anchor_index] for anchor_index in range(len(reading))}
+                    device_data['device_name'] = tag.name
+                    database_connection.write_data_object_time_series(
+                        timestamp = timestamp,
+                        object_id = tag_mac_address,
+                        data = device_data
+                    )
+
+            # remove bad tags
+            self.tags = {key: value for key, value in self.tags.items() if key not in bad_tags}
+
+            # if collection period elapses, find new tags
+            time_1 = time.time()
+            elapsed_time  = time_1 - time_0
+            if elapsed_time >= self.collection_period:
+                self.reset_tags()
+                time_0 = time.time()
+                logger.info('Collecting data for {} seconds'.format(self.collection_period))
+
+    def run_old(self, measurement_database):
         logger.info('Collecting data')
         data = defaultdict(list)
         time_0 = time.time()
@@ -86,42 +123,6 @@ class Scanner:
                         'ranging_data': reading
                     }
                     measurement_database.put_device_data(device_data)
-
-            # remove bad tags
-            self.tags = {key: value for key, value in self.tags.items() if key not in bad_tags}
-
-            # if collection period elapses, find new tags
-            time_1 = time.time()
-            elapsed_time  = time_1 - time_0
-            if elapsed_time >= self.collection_period:
-                self.reset_tags()
-                time_0 = time.time()
-                logger.info('Collecting data for {} seconds'.format(self.collection_period))
-
-    def run_db_connection(self, database_connection):
-        logger.info('Collecting data')
-        data = defaultdict(list)
-        time_0 = time.time()
-        logger.info('Collecting data for {} seconds'.format(self.collection_period))
-        while True:
-            bad_tags = []
-            for tag_mac_address, tag in self.tags.items():
-                try:
-                    reading = tag.read()
-                except Exception as exc:
-                    logger.warning("Error reading from {} ({}) [Exception: {}]. Removing from tag list.".format(tag.name, tag_mac_address, exc))
-                    bad_tags.append(tag_mac_address)
-                    tag.close()
-                else:
-                    logger.debug("{} :: {}".format(tag_mac_address, [None if x is None else "{:.3f}".format(x) for x in reading]))
-                    data[tag_mac_address] = reading
-                    timestamp = datetime.datetime.now(datetime.timezone.utc)
-                    device_data = {'range_anchor{:02}'.format(anchor_index): reading[anchor_index] for anchor_index in range(len(reading))}
-                    database_connection.write_data_object_time_series(
-                        timestamp = timestamp,
-                        object_id = tag_mac_address,
-                        data = device_data
-                    )
 
             # remove bad tags
             self.tags = {key: value for key, value in self.tags.items() if key not in bad_tags}

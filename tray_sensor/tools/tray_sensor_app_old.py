@@ -1,9 +1,14 @@
 from tray_sensor import scanner
-from database_connection.csv import DatabaseConnectionCSV
+from tray_sensor.databases.measurement_database.csv_local import MeasurementDatabaseCSVLocal
 import argparse
 import logging
-import time
-import os
+
+TRAY_SENSOR_DATA_FIELDS = [
+    'timestamp',
+    'mac_address',
+    'local_name',
+    'ranging_data'
+]
 
 def main():
     parser = argparse.ArgumentParser(
@@ -46,34 +51,24 @@ def main():
     collection_period = args.collection_period
     timeout = args.timeout
     loglevel = args.loglevel
+    fields = TRAY_SENSOR_DATA_FIELDS
     # Set log level
     if loglevel is not None:
         numeric_loglevel = getattr(logging, loglevel.upper(), None)
         if not isinstance(numeric_loglevel, int):
             raise ValueError('Invalid log level: %s'.format(loglevel))
         logging.basicConfig(level=numeric_loglevel)
-    # Construct path
-    file_timestamp = time.strftime('%y%m%d_%H%M%S', time.gmtime())
-    path = os.path.join(
-        directory,
-        '{}_{}.csv'.format(
-            filename_base,
-            file_timestamp))
     # Initialize database
-    data_field_names = ['range_anchor{:02}'.format(anchor_index) for anchor_index in range(16)]
-    convert_to_string_functions = {data_field_names[anchor_index]: lambda range: '{:.3f}'.format(range) for anchor_index in range(16)}
-    convert_from_string_functions = {data_field_names[anchor_index]: lambda string: float(string) for anchor_index in range(16)}
-    database_connection = DatabaseConnectionCSV(
-        path,
-        data_field_names = data_field_names,
-        convert_to_string_functions = convert_to_string_functions,
-        convert_from_string_functions = convert_from_string_functions
+    measurement_database = MeasurementDatabaseCSVLocal(
+        directory = directory,
+        filename_base = filename_base,
+        fields = fields
     )
     # Scan for tags
     sc = scanner.Scanner(collection_period, timeout)
     sc.find_new_tags()
     # Collect data
-    sc.run_db_connection(database_connection)
+    sc.run_old(measurement_database)
 
 if __name__ == "__main__":
     main()
