@@ -54,7 +54,6 @@ def main():
     collection_period = args.collection_period
     timeout = args.timeout
     loglevel = args.loglevel
-    fields = TRAY_SENSOR_DATA_FIELDS
     # Set log level
     if loglevel is not None:
         numeric_loglevel = getattr(logging, loglevel.upper(), None)
