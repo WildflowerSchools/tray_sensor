@@ -80,7 +80,7 @@ class Scanner:
                     data[tag_mac_address] = reading
                     timestamp = datetime.datetime.now(datetime.timezone.utc)
                     device_data = {'range_anchor{:02}'.format(anchor_index): reading[anchor_index] for anchor_index in range(len(reading))}
-                    device_data['device_name'] = tag.name
+                    device_data['device_local_name'] = tag.name
                     database_connection.write_data_object_time_series(
                         timestamp = timestamp,
                         object_id = tag_mac_address,

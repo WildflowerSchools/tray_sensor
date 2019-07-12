@@ -61,9 +61,9 @@ def main():
             file_timestamp))
     # Initialize database
     range_data_field_names = ['range_anchor{:02}'.format(anchor_index) for anchor_index in range(16)]
-    convert_to_string_functions = {range_data_field_names[anchor_index]: lambda range: '{:.3f}'.format(range) for anchor_index in range(16)}
+    convert_to_string_functions = {range_data_field_names[anchor_index]: lambda range: '{:.4f}'.format(range) for anchor_index in range(16)}
     convert_from_string_functions = {range_data_field_names[anchor_index]: lambda string: float(string) for anchor_index in range(16)}
-    data_field_names = ['device_name'] + range_data_field_names
+    data_field_names = ['device_local_name'] + range_data_field_names
     database_connection = DatabaseConnectionCSV(
         path,
         data_field_names = data_field_names,
