@@ -1,17 +1,9 @@
 from tray_sensor import scanner
 from database_connection.csv import DatabaseConnectionCSV
-# from tray_sensor.databases.measurement_database.csv_local import MeasurementDatabaseCSVLocal
 import argparse
 import logging
 import time
 import os
-
-# TRAY_SENSOR_DATA_FIELDS = [
-#     'timestamp',
-#     'mac_address',
-#     'local_name',
-#     'ranging_data'
-# ]
 
 def main():
     parser = argparse.ArgumentParser(
