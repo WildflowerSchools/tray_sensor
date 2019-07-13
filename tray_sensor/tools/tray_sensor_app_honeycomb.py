@@ -11,12 +11,12 @@ def main():
     parser.add_argument(
         '-e',
         '--env_name',
-        default = 'wework-3a',
-        help = 'Honeycomb environment name (default is wework-3a)'
+        default = 'TEST Ted home office',
+        help = 'Honeycomb environment name (default is "TEST Ted home office")'
     )
     parser.add_argument(
-        '-t',
-        '--type',
+        '-o',
+        '--object_type',
         default = 'DEVICE',
         help = 'Honeycomb object type (default is DEVICE)'
     )
@@ -48,7 +48,7 @@ def main():
     # Read arguments
     args = parser.parse_args()
     environment_name_honeycomb = args.env_name
-    object_type_honeycomb = args.type
+    object_type_honeycomb = args.object_type
     object_id_field_name_honeycomb = args.id_field_name
     collection_period = args.collection_period
     timeout = args.timeout
