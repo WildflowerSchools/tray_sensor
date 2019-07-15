@@ -61,7 +61,7 @@ class Scanner:
         self.clear_tags()
         self.find_new_tags()
 
-    def run(self, measurement_database):
+    def run(self, database_connection):
         logger.info('Collecting data')
         data = defaultdict(list)
         time_0 = time.time()
@@ -79,13 +79,13 @@ class Scanner:
                     logger.debug("{} :: {}".format(tag_mac_address, [None if x is None else "{:.3f}".format(x) for x in reading]))
                     data[tag_mac_address] = reading
                     timestamp = datetime.datetime.now(datetime.timezone.utc)
-                    device_data = {
-                        'timestamp': timestamp,
-                        'mac_address': tag_mac_address,
-                        'local_name': tag.name,
-                        'ranging_data': reading
-                    }
-                    measurement_database.put_device_data(device_data)
+                    device_data = {'range_anchor{:02}'.format(anchor_index): reading[anchor_index] for anchor_index in range(len(reading))}
+                    device_data['device_local_name'] = tag.name
+                    database_connection.write_data_object_time_series(
+                        timestamp = timestamp,
+                        object_id = tag_mac_address,
+                        data = device_data
+                    )
 
             # remove bad tags
             self.tags = {key: value for key, value in self.tags.items() if key not in bad_tags}

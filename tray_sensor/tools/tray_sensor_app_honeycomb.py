@@ -1,29 +1,30 @@
 from tray_sensor import scanner
-from tray_sensor.databases.measurement_database.csv_local import MeasurementDatabaseCSVLocal
+from database_connection_honeycomb import DatabaseConnectionHoneycomb
 import argparse
 import logging
-
-TRAY_SENSOR_DATA_FIELDS = [
-    'timestamp',
-    'mac_address',
-    'local_name',
-    'ranging_data'
-]
+import time
+import os
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Read data from tray sensors and save to local CSV file.')
+        description='Read data from tray sensors and save to Honeycomb.')
     parser.add_argument(
-        '-d',
-        '--dir',
-        default = '.',
-        help = 'path to directory for output file (default is .)'
+        '-e',
+        '--env_name',
+        default = 'TEST Ted home office',
+        help = 'Honeycomb environment name (default is "TEST Ted home office")'
     )
     parser.add_argument(
         '-o',
-        '--output_file',
-        default = 'tray_sensor_data',
-        help = 'base of filename for output file; timestamp and .csv extension added automatically (default is tray_sensor_data)'
+        '--object_type',
+        default = 'DEVICE',
+        help = 'Honeycomb object type (default is DEVICE)'
+    )
+    parser.add_argument(
+        '-i',
+        '--id_field_name',
+        default = 'part_number',
+        help = 'name of Honeycomb field in which to store object ID (default is part_number)'
     )
     parser.add_argument(
         '-c',
@@ -46,12 +47,12 @@ def main():
     )
     # Read arguments
     args = parser.parse_args()
-    directory = args.dir
-    filename_base = args.output_file
+    environment_name_honeycomb = args.env_name
+    object_type_honeycomb = args.object_type
+    object_id_field_name_honeycomb = args.id_field_name
     collection_period = args.collection_period
     timeout = args.timeout
     loglevel = args.loglevel
-    fields = TRAY_SENSOR_DATA_FIELDS
     # Set log level
     if loglevel is not None:
         numeric_loglevel = getattr(logging, loglevel.upper(), None)
@@ -59,16 +60,16 @@ def main():
             raise ValueError('Invalid log level: %s'.format(loglevel))
         logging.basicConfig(level=numeric_loglevel)
     # Initialize database
-    measurement_database = MeasurementDatabaseCSVLocal(
-        directory = directory,
-        filename_base = filename_base,
-        fields = fields
+    database_connection = DatabaseConnectionHoneycomb(
+        environment_name_honeycomb = environment_name_honeycomb,
+        object_type_honeycomb = object_type_honeycomb,
+        object_id_field_name_honeycomb = object_id_field_name_honeycomb
     )
     # Scan for tags
     sc = scanner.Scanner(collection_period, timeout)
     sc.find_new_tags()
     # Collect data
-    sc.run(measurement_database)
+    sc.run(database_connection)
 
 if __name__ == "__main__":
     main()
