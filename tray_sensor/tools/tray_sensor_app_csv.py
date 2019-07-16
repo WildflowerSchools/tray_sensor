@@ -7,7 +7,9 @@ import os
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Read data from tray sensors and save to local CSV file.')
+        description='Read data from tray sensors and save to local CSV file.',
+        epilog = 'Anchor ID file should be a simple text file, one anchor ID per line. If anchor IDs are not specified, tool will use anchor_00 through anchor_15 (assuming 16 values per reading).'
+    )
     parser.add_argument(
         '-d',
         '--dir',
@@ -35,6 +37,11 @@ def main():
         help = 'duration of scan for tags, in seconds (default 10)'
     )
     parser.add_argument(
+        '-a',
+        '--anchor_id_file',
+        help = 'path to file containing anchor IDs'
+    )
+    parser.add_argument(
         '-l',
         '--loglevel',
         help = 'log level (e.g., debug or warning or info)'
@@ -45,6 +52,7 @@ def main():
     filename_base = args.output_file
     collection_period = args.collection_period
     timeout = args.timeout
+    anchor_id_file = args.anchor_id_file
     loglevel = args.loglevel
     # Set log level
     if loglevel is not None:
@@ -59,11 +67,19 @@ def main():
         '{}_{}.csv'.format(
             filename_base,
             file_timestamp))
+    # Construct anchor ID list
+    if anchor_id_file is None:
+        anchor_ids  =  None
+    else:
+        anchor_ids = []
+        with open(anchor_id_file, mode = 'r') as fh:
+            for line in fh:
+                anchor_ids.append(line.rstrip())
+    print('Anchor IDs: {}'.format(anchor_ids))
     # Initialize database
-    range_data_field_names = ['range_anchor{:02}'.format(anchor_index) for anchor_index in range(16)]
-    convert_to_string_functions = {range_data_field_names[anchor_index]: lambda range: '{:.4f}'.format(range) for anchor_index in range(16)}
-    convert_from_string_functions = {range_data_field_names[anchor_index]: lambda string: float(string) for anchor_index in range(16)}
-    data_field_names = ['device_local_name'] + range_data_field_names
+    data_field_names = ['device_local_name', 'anchor_id', 'range']
+    convert_to_string_functions = {'range': lambda range: '{:.4f}'.format(range)}
+    convert_from_string_functions = {'range': lambda string: float(string)}
     database_connection = DatabaseConnectionCSV(
         path,
         data_field_names = data_field_names,
@@ -74,7 +90,7 @@ def main():
     sc = scanner.Scanner(collection_period, timeout)
     sc.find_new_tags()
     # Collect data
-    sc.run(database_connection)
+    sc.run(database_connection, anchor_ids)
 
 if __name__ == "__main__":
     main()
