@@ -94,7 +94,7 @@ class Scanner:
                                 'anchor_id': anchor_ids[anchor_index],
                                 'range': reading[anchor_index]
                             }
-                            database_connection.write_data_object_time_series(
+                            database_connection.write_datapoint_object_time_series(
                                 timestamp = timestamp,
                                 object_id = tag_mac_address,
                                 data = device_data
